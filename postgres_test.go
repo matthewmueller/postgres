@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	conn := "postgres://localhost:5432/test-postgres?sslmode=disable"
-	client, err := Postgres(conn)
+	client, err := Connect(conn)
 	if err != nil {
 		log.WithError(err).Fatalf("Couldnt connect to %s", conn)
 	}
@@ -50,7 +50,7 @@ func setup() {
 
 func teardown() {
 	conn := "postgres://localhost:5432/test-postgres?sslmode=disable"
-	client, err := Postgres(conn)
+	client, err := Connect(conn)
 	if err != nil {
 		log.WithError(err).Fatalf("Couldnt connect to %s", conn)
 	}
@@ -64,7 +64,7 @@ func teardown() {
 }
 
 func TestConnect(t *testing.T) {
-	client, err := Postgres("postgres://localhost:5432/test-postgres?sslmode=disable")
+	client, err := Connect("postgres://localhost:5432/test-postgres?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
-	client, err := Postgres("postgres://localhost:5432/test-postgres?sslmode=disable")
+	client, err := Connect("postgres://localhost:5432/test-postgres?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,8 +108,31 @@ func TestAll(t *testing.T) {
 	}
 }
 
+func TestNone(t *testing.T) {
+	client, err := Connect("postgres://localhost:5432/test-postgres?sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	row := client.One("select name, genre from films", map[string]interface{}{})
+
+	var f film
+	if err := row.Scan(&f.name, &f.genre); err != nil {
+		t.Fatal(err)
+	}
+
+	if f.name != "Vanilla Sky" {
+		t.Fatalf("wrong name %s", f.name)
+	}
+
+	if f.genre != "Drama" {
+		t.Fatalf("wrong drama %s", f.genre)
+	}
+}
+
 func TestOne(t *testing.T) {
-	client, err := Postgres("postgres://localhost:5432/test-postgres?sslmode=disable")
+	client, err := Connect("postgres://localhost:5432/test-postgres?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +155,7 @@ func TestOne(t *testing.T) {
 }
 
 func TestMultiple(t *testing.T) {
-	client, err := Postgres("postgres://localhost:5432/test-postgres?sslmode=disable")
+	client, err := Connect("postgres://localhost:5432/test-postgres?sslmode=disable")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,9 +177,15 @@ func TestMultiple(t *testing.T) {
 	}
 }
 
+func TestInvalidConnString(t *testing.T) {
+	_, err := Connect("omg")
+	if err == nil {
+		t.Fatalf("Should have been unable to connect")
+	}
+}
+
 func TestInaccessble(t *testing.T) {
-	client, _ := Postgres("postgres://localhost:5432/test-postgres-noooo?sslmode=disable")
-	err := client.Ping()
+	_, err := Connect("postgres://localhost:5432/test-postgres-noooo?sslmode=disable")
 	if err == nil {
 		t.Fatalf("Should have been unable to connect")
 	}

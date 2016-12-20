@@ -15,10 +15,15 @@ type Client struct {
 	*sql.DB
 }
 
-// Postgres initialize a client
-func Postgres(conn string) (Client, error) {
+// Connect to postgres and return a client
+func Connect(conn string) (Client, error) {
 	var client Client
 	db, err := sql.Open("postgres", conn)
+	if err != nil {
+		return client, err
+	}
+
+	err = db.Ping()
 	if err != nil {
 		return client, err
 	}
