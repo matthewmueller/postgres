@@ -131,6 +131,29 @@ func TestOne(t *testing.T) {
 	}
 }
 
+func TestMultiple(t *testing.T) {
+	client, err := Postgres("postgres://localhost:5432/test-postgres?sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	row := client.One("select name, genre from films where name = :name and genre = :genre", map[string]interface{}{"genre": "Drama", "name": "Vanilla Sky"})
+
+	var f film
+	if err := row.Scan(&f.name, &f.genre); err != nil {
+		t.Fatal(err)
+	}
+
+	if f.name != "Vanilla Sky" {
+		t.Fatalf("wrong name %s", f.name)
+	}
+
+	if f.genre != "Drama" {
+		t.Fatalf("wrong drama %s", f.genre)
+	}
+}
+
 func TestInaccessble(t *testing.T) {
 	client, _ := Postgres("postgres://localhost:5432/test-postgres-noooo?sslmode=disable")
 	err := client.Ping()
