@@ -23,6 +23,7 @@ func Connect(conn string) (Client, error) {
 		return client, err
 	}
 
+	// Test the connection
 	err = db.Ping()
 	if err != nil {
 		return client, err
